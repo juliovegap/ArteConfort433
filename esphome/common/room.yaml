@@ -1,0 +1,151 @@
+# One ceiling fan = one remote control. Included once per room with `packages:` and `vars:`
+# (see arteconfort_esp32.yaml). It creates, for the room:
+#   * an `arteconfort_433` hub (id: radio_${room_id}) that shares the single `remote_transmitter` (rf_tx)
+#   * a Home Assistant *device* "${room_name} Fan" placed in the area "${room_name}"
+#   * one assumed-state `fan` entity (OFF, speeds 1-6, "Breeze" preset)
+#   * 18 buttons, one per key of the original remote
+#
+# Variables:  room_id       unique identifier, letters/digits/underscore only (living_room)
+#             room_name     name shown in Home Assistant ("Living Room")
+#             patterns_file codes learned from THIS room's remote (patterns/living_room.yaml)
+# Optional variable:  protocol   arteconfort (default) | sulion  - selects framing and timing (see README)
+# Substitution used from the main file: arteconfort_repeat
+#
+# If you only want the fan entity, or only the buttons, delete the other block below.
+
+esphome:
+  areas:
+    - id: area_${room_id}
+      name: "${room_name}"
+  devices:
+    - id: dev_${room_id}
+      name: "${room_name} Fan"
+      area_id: area_${room_id}
+
+arteconfort_433:
+  - id: radio_${room_id}
+    transmitter_id: rf_tx
+    protocol: ${ protocol | default('arteconfort') }   # arteconfort | sulion (see README)
+    repeat: ${arteconfort_repeat}
+    patterns: !include ../${patterns_file}   # path relative to common/
+
+# Assumed-state fan (the remote is one-way). It never transmits at boot.
+fan:
+  - platform: arteconfort_433
+    name: "Fan"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    off_pattern: fanoff
+    speed_patterns: [fanspeed1, fanspeed2, fanspeed3, fanspeed4, fanspeed5, fanspeed6]
+    breeze_pattern: breeze    # "Breeze" preset; delete the line if your fan has no such key
+
+# One button per remote key. If you use the fan entity you can delete the OFF / speed / breeze buttons.
+button:
+  - platform: arteconfort_433
+    name: "Fan Off"
+    icon: "mdi:fan-off"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: fanoff
+  - platform: arteconfort_433
+    name: "Speed 1"
+    icon: "mdi:fan-speed-1"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: fanspeed1
+  - platform: arteconfort_433
+    name: "Speed 2"
+    icon: "mdi:fan-speed-2"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: fanspeed2
+  - platform: arteconfort_433
+    name: "Speed 3"
+    icon: "mdi:fan-speed-3"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: fanspeed3
+  - platform: arteconfort_433
+    name: "Speed 4"
+    icon: "mdi:numeric-4-circle-outline"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: fanspeed4
+  - platform: arteconfort_433
+    name: "Speed 5"
+    icon: "mdi:numeric-5-circle-outline"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: fanspeed5
+  - platform: arteconfort_433
+    name: "Speed 6"
+    icon: "mdi:numeric-6-circle-outline"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: fanspeed6
+  - platform: arteconfort_433
+    name: "Breeze"
+    icon: "mdi:weather-windy"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: breeze
+  - platform: arteconfort_433
+    name: "Summer-Winter"
+    icon: "mdi:swap-vertical"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: summerwintertoggle
+  - platform: arteconfort_433
+    name: "Timer 1 h"
+    icon: "mdi:timer-outline"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: 1hour
+  - platform: arteconfort_433
+    name: "Timer 2 h"
+    icon: "mdi:timer-outline"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: 2hours
+  - platform: arteconfort_433
+    name: "Timer 4 h"
+    icon: "mdi:timer-outline"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: 4hours
+  - platform: arteconfort_433
+    name: "Light"
+    icon: "mdi:lightbulb"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: lighttoggle
+  - platform: arteconfort_433
+    name: "Warm Light"
+    icon: "mdi:lightbulb-on-50"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: warmlight
+  - platform: arteconfort_433
+    name: "Neutral Light"
+    icon: "mdi:lightbulb-on-outline"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: neutrallight
+  - platform: arteconfort_433
+    name: "Cold Light"
+    icon: "mdi:lightbulb-on"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: coldlight
+  - platform: arteconfort_433
+    name: "Dimmer Up"
+    icon: "mdi:brightness-7"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: dimmerup
+  - platform: arteconfort_433
+    name: "Dimmer Down"
+    icon: "mdi:brightness-5"
+    device_id: dev_${room_id}
+    arteconfort_id: radio_${room_id}
+    pattern: dimmerdown

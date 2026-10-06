@@ -1,0 +1,84 @@
+# ArteConfort 433 - ESP8266 (NodeMCU) + CC1101, up to three ceiling fans from ONE device.
+#
+#   CC1101  NodeMCU    SCK D5/GPIO14 | MISO D6/GPIO12 | MOSI D7/GPIO13 | CSn D8/GPIO15 | GDO0 D2/GPIO4
+#   GPIO15 must be LOW at boot: do not add a pull-up on CSn.
+#   (recommended: 330 ohm - 1 kohm series resistor on GDO0, and a 17.3 cm wire antenna)
+#
+# One radio, one transmitter, one `arteconfort_433` hub per fan. Each room shows up in Home Assistant as
+# its own device ("<Room> Fan") placed in its own area, with a fan entity and 18 buttons.
+#
+# To add or remove a room, add or delete a block under `packages:` and its codes file in `patterns/`.
+# Learn the codes of every remote with arteconfort_capture_rx.yaml.
+
+substitutions:
+  device_name: arteconfort
+  friendly_name: "ArteConfort"
+  arteconfort_repeat: "4"      # times each frame is repeated per press
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp8266:
+  board: nodemcuv2
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [arteconfort_433]
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+spi:
+  clk_pin: GPIO14
+  mosi_pin: GPIO13
+  miso_pin: GPIO12
+
+cc1101:
+  id: cc1101_radio
+  cs_pin: GPIO15
+  frequency: 433.92MHz         # measured on a real remote; use arteconfort_scan_freq.yaml if yours differs
+  modulation_type: ASK/OOK
+  output_power: 10             # dBm (max 11)
+
+remote_transmitter:
+  id: rf_tx
+  pin: GPIO5                   # GDO0 of the CC1101
+  carrier_duty_percent: 100%   # no software carrier: the CC1101 generates it
+  on_transmit:
+    then:
+      - cc1101.begin_tx: cc1101_radio
+  on_complete:
+    then:
+      - cc1101.set_idle: cc1101_radio
+
+packages:
+  living_room: !include
+    file: common/room.yaml
+    vars:
+      room_id: living_room
+      room_name: "Living Room"
+      patterns_file: patterns/living_room.yaml
+  bedroom: !include
+    file: common/room.yaml
+    vars:
+      room_id: bedroom
+      room_name: "Bedroom"
+      patterns_file: patterns/bedroom.yaml
+  office: !include
+    file: common/room.yaml
+    vars:
+      room_id: office
+      room_name: "Office"
+      patterns_file: patterns/office.yaml
+      # Another brand of remote: protocol: sulion   (default: arteconfort; see README)

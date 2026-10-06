@@ -1,0 +1,25 @@
+# 30-bit OOK codes of the remote control of: office
+# IMPORTANT: replace these example values with the ones learned from YOUR remote
+# (see arteconfort_capture_rx.yaml). Every fan may use different codes.
+# Format: 30-bit value = 29-bit code shifted left by one, plus the last bit (0 or 1).
+# Keys are free names; buttons, the fan entity and actions refer to them.
+# YAML pitfall: `on` and `off` are booleans, quote them if you use them as names.
+
+fanoff: 
+fanspeed1: 
+fanspeed2: 
+fanspeed3: 
+fanspeed4: 
+fanspeed5: 
+fanspeed6: 
+breeze: 
+summerwintertoggle: 
+1hour: 
+2hours: 
+4hours: 
+lighttoggle: 
+warmlight: 
+neutrallight: 
+coldlight: 
+dimmerup: 
+dimmerdown: 

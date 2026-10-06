@@ -1,0 +1,84 @@
+# Capture and analysis of ArteConfort remotes with the CC1101 in receive mode (ESP32).
+#
+# Flash this YAML with the same wiring as the transmitter node, press a key of the original remote
+# 1-2 cm from the CC1101 and watch the log:
+#
+#     esphome run arteconfort_capture_rx.yaml
+#
+# The `arteconfort_433` hub (with receiver_id) decodes every reception without knowing its timing in
+# advance and prints, for example:
+#
+#     Received 0x3D41BAE4 (30 bits) = pattern 'neutrallight'
+#       Protocol: arteconfort (use `protocol: arteconfort` in the hub)
+#       30 bits, then an idle gap of ~5000 us (the mark before it is the last bit)
+#       Short ~380 us, long ~1130 us
+#       YAML: bits: 30, gap_us: 5000, sync_mark_us: 0, sync_space_us: 0, short_us: 380, long_us: 1130
+#
+#   * `0x...` is the code for patterns/*.yaml (the name appears if you already have it listed).
+#   * The YAML line holds the measured values for the `arteconfort_433:` hub of your transmitter node.
+#   * A press usually arrives as several repetitions glued together; the log tells you how many and
+#     warns if they contain different codes.
+#   * Raw pulses are dumped too (dump: raw) in case something does not decode.
+#   * If nothing useful shows up: move the remote closer, check the wiring (GDO0 -> GPIO4), or run
+#     arteconfort_scan_freq.yaml to find the frequency your remote uses. A high noise level on GDO0
+#     can be reduced with `carrier_sense_abs_thr` in `cc1101:`.
+
+substitutions:
+  device_name: arteconfort-capture
+
+esphome:
+  name: ${device_name}
+  on_boot:
+    priority: -100          # after the CC1101 has finished its setup
+    then:
+      - cc1101.begin_rx: cc1101_radio
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [arteconfort_433]
+
+logger:
+  level: DEBUG
+
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+  miso_pin: GPIO19
+
+cc1101:
+  id: cc1101_radio
+  cs_pin: GPIO5          # strapping-pin warning on the classic ESP32: harmless for the CC1101 CS
+  frequency: 433.92MHz
+  modulation_type: ASK/OOK
+  filter_bandwidth: 250kHz
+
+remote_receiver:
+  id: rf_rx
+  pin: GPIO4                # GDO0
+  dump: raw
+  tolerance: 25%
+  filter: 200us             # ignore pulses shorter than 200 us (noise); real pulses are >= 300 us
+  idle: 8ms                 # longer than the ~5 ms gap: all repetitions of a press arrive as one reception
+
+# Analyzer: decodes every reception and suggests the values for the transmitter's hub.
+arteconfort_433:
+  id: radio_rx
+  receiver_id: rf_rx
+  protocol: auto            # tries every known protocol (ArteConfort, Sulion) and tells you which one matched
+  patterns: !include patterns/living_room.yaml   # optional: shows the name of the pressed key
